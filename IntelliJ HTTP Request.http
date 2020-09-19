@@ -1,0 +1,78 @@
+### salut
+POST http://localhost:8000/v1/users/@me/homepage
+Cache-Control: no-cache
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer mcoKng3V75AIiA208ZoWUa5bqcYXMaLCrEjrIKVDbNzXU4dJnUzH7UNIy6eFb1mjxs9UkLkHo2UphbGSDM4vxGzkQFFJqLMjZ5RZFojyX5PTFa
+
+{
+    "type": "text",
+    "order": 1
+}
+###
+
+### salut
+POST http://localhost:8000/v1/users/@me/homepage/1
+Cache-Control: no-cache
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer mcoKng3V75AIiA208ZoWUa5bqcYXMaLCrEjrIKVDbNzXU4dJnUzH7UNIy6eFb1mjxs9UkLkHo2UphbGSDM4vxGzkQFFJqLMjZ5RZFojyX5PTFa
+
+{
+    "card_id": 1,
+    "category_id": 1,
+    "image": "https://cdn.discordapp.com/avatars/452475691410128906/c53d1e809be11d24caa5765f0a4cb45e.webp?size=128"
+}
+###
+
+
+
+
+
+
+
+
+
+
+### salut
+GET https://api.g-ca.fr/v1/users/277800422347898883
+Cache-Control: no-cache
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer HgexJcUUXW8brVTr49R6nAaSMLkzVQzZW9cszvHt6zHoh0rcBoF6QgL7RhSTDOcV5A7ngnE4rorpZArQPFWUOyUALntQ7SnRxT5GDFEpAKPwJI
+
+###
+
+GET https://api.g-ca.fr/v1/admin/shortlinks
+Cache-Control: no-cache
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer myybnbGFTRHN1XcDgjiFoExd9Ke4wNEcevqEptNLidUjVCL3VVayylxEH3kLExNAu9VRQH2334bJMuHIOiH5KjSP6a45ZFs6GuYZm9WovlJh55
+
+
+###
+
+GET https://api.g-ca.fr/v1/admin/shortlinks
+Cache-Control: no-cache
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer 
+
+
+
+###
+GET https://discord.com/api/v6/guilds/605569803473911818/channels
+Cache-Control: no-cache
+Accept: application/json
+Content-Type: application/json
+
+
+
+###
+POST https://api.steampowered.com/ISteamRemoteStorage/EnumerateUserPublishedFiles/v1/?key=monapikey HTTP/1.1
+Cache-Control: no-cache
+Accept: application/json
+Content-Type: application/x-www-form-urlencoded
+
+steamid=76561198160451971
+&appid=4020

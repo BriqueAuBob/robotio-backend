@@ -1,0 +1,57 @@
+version: '3.7'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www/app
+    networks:
+      - internal
+
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./:/var/www/app
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - internal
+      - front
+
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33061:3306"
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_ROOT_PASSWORD: your_mysql_root_password
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - mysql:/var/lib/mysql/
+    networks:
+      - internal
+
+volumes:
+  mysql:
+    driver: local
+
+networks:
+  internal:
+    driver: bridge
+  front:
+    external: true

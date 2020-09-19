@@ -1,0 +1,59 @@
+image: docker:19
+
+.init_ssh: &init_ssh
+  - eval $(ssh-agent -s)
+  - ssh-add && echo "$SSH_PRIVATE_KEY"
+  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+
+.change_file_permissions: &change_file_permissions
+  - find . -type f -not -path "./vendor/*" -exec chmod 664 {} \;
+  - find . -type d -not -path "./vendor/*" -exec chmod 775 {} \;
+
+stages:
+  - build
+  - push
+
+services:
+  - docker:dind
+
+build:
+  stage: build
+  script:
+    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+    - docker pull $SERVICE_NAME:latest || true
+    - >
+      docker build
+      --pull
+      --build-arg VCS_REF=$CI_COMMIT_SHA
+      --build-arg VCS_URL=$CI_PROJECT_URL
+      --cache-from $SERVICE_NAME:latest
+      --tag $SERVICE_NAME:$CI_COMMIT_SHA
+      .
+    - docker push $SERVICE_NAME:$CI_COMMIT_SHA
+
+latest:
+  variables:
+    GIT_STRATEGY: none
+  stage: push
+  script:
+    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+    - docker pull $SERVICE_NAME:$CI_COMMIT_SHA
+    - docker tag $SERVICE_NAME:$CI_COMMIT_SHA $SERVICE_NAME:latest
+    - docker push $SERVICE_NAME:latest
+  only:
+    - master
+
+deploy:
+  variables:
+    GIT_STRATEGY: none
+  stage: deploy
+  image: kroniak/ssh-client
+  script:
+    - *init_ssh
+    - ssh -o StrictHostKeyChecking=no -T "$DC_SSH_USER@$DC_SSH_IP" -p $DC_SSH_PORT "cd ~/docker && sudo docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    - ssh -o StrictHostKeyChecking=no -T "$DC_SSH_USER@$DC_SSH_IP" -p $DC_SSH_PORT "cd ~/docker && sudo docker-compose pull $SERVICE_NAME && sudo docker-compose up --force-recreate --no-deps -d $SERVICE_NAME"
+  only:
+    - master
