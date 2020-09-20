@@ -14,7 +14,8 @@ class Application extends Model
         "name",
         "discriminator",
         "avatar",
-        "owner_id"
+        "owner_id",
+        "prefix",
     ];
 
     public function owner() {

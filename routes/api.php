@@ -31,11 +31,17 @@ Route::prefix("v1")->namespace("Api\V1")->group(static function () {
     });
 
     // ~/applications
-    Route::prefix("applications")->middleware(["auth:api"])->group(static function() {
-        Route::get("/", "ApplicationController@index")->name("applications.index");
+    Route::prefix("applications")->group(static function() {
+        Route::get("/", "ApplicationController@index")->middleware(["auth:api"])->name("applications.index");
         Route::get("/{id}", "ApplicationController@get")->name("applications.get");
-        Route::put("/{id}/synchronize", "ApplicationController@sync")->name("applications.sync");
-        Route::post("/", "ApplicationController@store")->name("applications.store");
+        Route::put("/{id}", "ApplicationController@edit")->middleware(["auth:api"])->name("applications.edit");
+        Route::put("/{id}/synchronize", "ApplicationController@sync")->middleware(["auth:api"])->name("applications.sync");
+
+        Route::get("/{id}/modules/{type}", "ModuleController@get")->name("modules.get");
+        Route::get("/{id}/modules/{type}", "ModuleController@edit")->name("modules.edit");
+        Route::post("/{id}/modules", "ModuleController@store")->middleware(["auth:api"])->name("modules.store");
+
+        Route::post("/", "ApplicationController@store")->middleware(["auth:api"])->name("applications.store");
     });
 
 });

@@ -10,6 +10,7 @@ use GuzzleHttp\Command\Exception\CommandClientException;
 
 use App\Models\User;
 use App\Models\Application;
+use App\Models\Module;
 use Illuminate\Support\Facades\Auth;
 
 use App\Helpers\Discord;
@@ -17,6 +18,8 @@ use RestCord\DiscordClient;
 
 use App\Http\Resources\Applications\ApplicationCollection;
 use App\Http\Resources\Applications\ApplicationResource;
+
+use App\Http\Requests\ApplicationRequest;
 
 class ApplicationController extends Controller
 {
@@ -30,11 +33,31 @@ class ApplicationController extends Controller
         return new ApplicationCollection($applications);
     }
 
-    public function get(string $id)
-    {
+    public function get(string $id, Request $request)
+    {   
+        if(!$request->user("api")) {
+            $header = $request->header("Authorization");
+            if(!isset($header)) {
+                return response()->json([
+                    "status" => 401,
+                    "message" => "Vous devez vous connecter pour effectuer cette requête!"
+                ], 401);
+            }
+
+            $app = Application::where("bot_token", $header)->where("_id", $id)->first();
+            if(!isset($app)) {
+                return response()->json([
+                    "status" => 404,
+                    "message" => "Cette application n'existe pas!"
+                ], 404);
+            }
+
+            return new ApplicationResource($app);
+        }
+
         $user = Auth::user();
         $application = Application::find($id);
-        
+
         if(!isset($application)) {
             return response()->json([
                 "status" => 404,
@@ -82,6 +105,7 @@ class ApplicationController extends Controller
                 "name" => $bot->username,
                 "discriminator" => $bot->discriminator,
                 "avatar" => "https://cdn.discordapp.com/avatars/{$bot->id}/{$bot->avatar}.png?size=128",
+                "prefix" => "/",
             ]);
 
             return [
@@ -90,6 +114,7 @@ class ApplicationController extends Controller
                 "name" => $bot->username,
                 "discriminator" => $bot->discriminator,
                 "avatar" => "https://cdn.discordapp.com/avatars/{$bot->id}/{$bot->avatar}.png?size=128",
+                "prefix" => "/",
             ];
         } catch (CommandClientException $e) {
             return response()->json([
@@ -99,7 +124,45 @@ class ApplicationController extends Controller
         }
     }
 
-    public function sync(string $id) {
+    public function edit(string $id, ApplicationRequest $request)
+    {
+        $user = Auth::user();
+        $application = Application::find($id);
+
+        if($request->input("bot_token")) {
+            try {
+                $discord = new DiscordClient([
+                    "token" => $request->input("bot_token"),
+                    "tokenType" => "Bot",
+                ]);
+                $bot = $discord->user->getCurrentUser();
+    
+                $application->bot_token = $request->input("bot_token");
+                $application->name = $bot->username;
+                $application->discriminator = $bot->discriminator;
+                $application->avatar = "https://cdn.discordapp.com/avatars/{$bot->id}/{$bot->avatar}.png?size=128";
+                $application->save();
+            } catch (CommandClientException $e) {
+                return response()->json([
+                    "status" => 404,
+                    "message" => "Ce bot n'existe pas!"
+                ], 404);
+            }
+        }
+
+        $application->update($request->validated());
+        return [
+            "notification" => [
+                "type" => "success",
+                "layout" => "notification",
+                "title" => "Succès!",
+                "content" => "Vous avez édité les informations de votre bot."
+            ]
+        ];
+    }
+
+    public function sync(string $id) 
+    {
         $user = Auth::user();
         $application = Application::find($id);
         $guild = collect($user->guilds)->firstWhere("id", $application->guild_id);
@@ -111,12 +174,12 @@ class ApplicationController extends Controller
             ], 404);
         }
 
-        if(!$guild["is_owner"]) {
-            return response()->json([
-                "status" => 401,
-                "message" => "Ce serveur ne t'appartiens pas!"
-            ], 401);
-        }
+        // if(!$guild["is_owner"]) {
+        //     return response()->json([
+        //         "status" => 401,
+        //         "message" => "Ce serveur ne t'appartiens pas!"
+        //     ], 401);
+        // }
 
         $botGuilds = Discord::getDiscordBot()->user->getCurrentUserGuilds([]);
         $botOnServer = collect($botGuilds)->firstWhere("id", "=", $guild["id"]);
