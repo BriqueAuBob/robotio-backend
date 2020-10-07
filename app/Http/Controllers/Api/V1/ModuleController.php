@@ -107,6 +107,13 @@ class ModuleController extends Controller
     {
         $application = Application::find($id);
         $mod = collect($application->modules)->where("type", $type)->first();
+
+        if(!isset($mod)) {
+            return response()->json([
+                "status" => 404,
+                "message" => "Il n'existe aucun module de ce type pour cette application!"
+            ], 401);
+        }
         $module = Module::find($mod["id"]);
 
         $module->update($request->validated());
