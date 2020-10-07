@@ -103,7 +103,7 @@ class ModuleController extends Controller
         ];
     }
 
-    public function edit(string $id, ModuleRequest $request)
+    public function edit(string $id, string $type, ModuleRequest $request)
     {
         $application = Application::find($id);
         $mod = collect($application->modules)->where("type", $type)->first();

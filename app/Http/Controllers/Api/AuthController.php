@@ -112,7 +112,7 @@ class AuthController extends Controller
         }
 
         Token::create([
-            'discord_id' => $user->discord_id,
+            'discord_id' => (string)$user->discord_id,
             'is_revokable' => false,
             'is_personal' => true,
             'access_token' => Str::random(110),
