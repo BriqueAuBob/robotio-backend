@@ -38,7 +38,7 @@ Route::prefix("v1")->namespace("Api\V1")->group(static function () {
         Route::put("/{id}/synchronize", "ApplicationController@sync")->middleware(["auth:api"])->name("applications.sync");
 
         Route::get("/{id}/modules/{type}", "ModuleController@get")->name("modules.get");
-        Route::get("/{id}/modules/{type}", "ModuleController@edit")->name("modules.edit");
+        Route::put("/{id}/modules/{type}", "ModuleController@edit")->name("modules.edit");
         Route::post("/{id}/modules", "ModuleController@store")->middleware(["auth:api"])->name("modules.store");
 
         Route::post("/", "ApplicationController@store")->middleware(["auth:api"])->name("applications.store");
