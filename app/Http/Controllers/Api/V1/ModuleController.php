@@ -55,11 +55,22 @@ class ModuleController extends Controller
 
             return $module;
         }
+
+        $modules = config("ro-bot.modules");
+        if(!isset($modules[$type])) return [
+                "notification" => [
+                "type" => "error",
+                "layout" => "notification",
+                "title" => "Erreur!",
+                "content" => "Ce module n'existe pas dans notre liste de modules."
+            ]
+        ];
             
         $application = Application::find($id);
         $mod = collect($application->modules)->where("type", $type)->first();
-        $module = Module::find($mod["id"]);
+        if($mod == null) return;
 
+        $module = Module::find($mod["id"]);
         return $module;
     }
 

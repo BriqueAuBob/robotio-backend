@@ -6,9 +6,6 @@ use \Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-/*
- * TODO: Writing field rules that can be updated by user
- */
 class ModuleRequest extends FormRequest
 {
     public function messages()
@@ -41,7 +38,6 @@ class ModuleRequest extends FormRequest
         return [
             "channel" => "string",
             "roles" => "array",
-            "permissions" => "array",
             "data" => "",
             "embed" => "",
             "response" => "string",

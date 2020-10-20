@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Http\Requests\Users;
+namespace App\Http\Requests;
 
 use \Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateRequest extends FormRequest
+class LogRequest extends FormRequest
 {
     public function messages()
     {
         return [
+            "channel.string" => "Le channel est invalide.",
         ];
     }
 
@@ -30,6 +31,17 @@ class UpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
+            "app_id"    => "required|string",
+            "module"    => "required|string",
+            "type"      => "required|string",
+            "content"   => "required|string",
         ];
+    }
+    
+    public function validationData()
+    {
+        return array_merge(parent::all(), [
+            "app_id" => \Route::input("id")
+        ]);
     }
 }

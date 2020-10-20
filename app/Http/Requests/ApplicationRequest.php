@@ -6,9 +6,6 @@ use \Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-/*
- * TODO: Writing field rules that can be updated by user
- */
 class ApplicationRequest extends FormRequest
 {
     public function messages()

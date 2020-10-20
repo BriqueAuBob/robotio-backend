@@ -193,7 +193,7 @@ class ApplicationController extends Controller
         $emojis = collect(Discord::getDiscordBot()->emoji->listGuildEmojis(["guild.id" => (integer)$guild["id"]]))->map(function ($emoji) {
             $mime = $emoji->animated ? "gif" : "png";
             return [
-                "id"        => $emoji->id,
+                "id"        => (string)$emoji->id,
                 "url"       => "https://cdn.discordapp.com/emojis/{$emoji->id}.{$mime}",
                 "name"      => $emoji->name,
             ];
@@ -202,13 +202,13 @@ class ApplicationController extends Controller
             return $channel->type == 0;
         })->map(function ($channel) {
             return [
-                "id"        => $channel->id,
+                "id"        => (string)$channel->id,
                 "name"      => $channel->name,
             ];
         });
         $roles = collect(Discord::getDiscordBot()->guild->getGuildRoles(["guild.id" => (integer)$guild["id"]]))->map(function( $role ) {
             return [
-                "id"        => $role->id,
+                "id"        => (string)$role->id,
                 "name"      => $role->name,
                 "color"     => "#".dechex($role->color)
             ];

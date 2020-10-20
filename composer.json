@@ -19,6 +19,7 @@
         "laravel/socialite": "^4.1",
         "laravel/tinker": "^1.0",
         "lorisleiva/laravel-deployer": "^0.2.15",
+        "paypal/rest-api-sdk-php": "*",
         "php-http/guzzle6-adapter": "^2.0",
         "pragmarx/version": "^1.0",
         "restcord/restcord": "^0.3.2",
@@ -29,6 +30,7 @@
         "socialiteproviders/steam": "^1.1",
         "socialiteproviders/twitch": "^5.2",
         "socialiteproviders/youtube": "^3.0",
+        "srmklive/paypal": "~1.0",
         "symfony/dom-crawler": "^4.3",
         "tucker-eric/eloquentfilter": "^2.1"
     },

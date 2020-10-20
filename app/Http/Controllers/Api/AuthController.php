@@ -71,7 +71,7 @@ class AuthController extends Controller
         }
 
         // Update or create user model with discord data.
-        $user = User::findOrNew($member->id);
+        $user = User::firstOrNew(["discord_id" => (string)$member->id]);
         $user->discord_id = (string)$member->id;
         $user->email = $member->email;
         $user->username = e($member->username);

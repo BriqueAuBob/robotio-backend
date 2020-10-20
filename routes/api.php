@@ -20,6 +20,8 @@ Route::post("logout", "Api\AuthController@logout")->name("logout");
 
 Route::prefix("v1")->namespace("Api\V1")->group(static function () {
 
+    Route::get("/paypal/redirect", "UserController@paypalRedirect")->name("me.paypal.redirect");
+    Route::get("/paypal/validate", "UserController@paypalValidate")->name("me.paypal.validate");
     // ~/users
     Route::prefix("users")->group(static function () {
 
@@ -36,6 +38,9 @@ Route::prefix("v1")->namespace("Api\V1")->group(static function () {
         Route::get("/{id}", "ApplicationController@get")->name("applications.get");
         Route::put("/{id}", "ApplicationController@edit")->middleware(["auth:api"])->name("applications.edit");
         Route::put("/{id}/synchronize", "ApplicationController@sync")->middleware(["auth:api"])->name("applications.sync");
+
+        Route::get("/{id}/log", "LogController@index")->middleware(["auth:api"])->name("logs.index");
+        Route::post("/{id}/log", "LogController@store")->name("logs.store");
 
         Route::get("/{id}/modules/{type}", "ModuleController@get")->name("modules.get");
         Route::put("/{id}/modules/{type}", "ModuleController@edit")->name("modules.edit");

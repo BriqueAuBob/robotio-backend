@@ -20,6 +20,19 @@ class ApplicationResource extends JsonResource
             $guild = collect($user->guilds)->where("id", $this->guild_id)->first();
 
             $default["guild"] = $guild;
+            $default["modules"] = isset($this->modules) ? $this->modules : null;
+        } else {
+            $default["modules"] = collect($this->modules)->map(static function($item, $key) {
+                $data = Module::where("_id", $item["id"])->first();
+                return [
+                    "id"    => $item["id"],
+                    "type"  => $item["type"],
+                    "data"  => $data->data,
+                    "embed"  => $data->embed,
+                    "roles"  => $data->roles,
+                    "channel"  => $data->channel,
+                ];
+            });
         }
         
         return $default;
@@ -44,7 +57,6 @@ class ApplicationResource extends JsonResource
             "roles"             => $this->roles,
             "emojis"            => $this->emojis,
             "bot_token"         => $this->bot_token,
-            "modules"            => isset($this->modules) ? $this->modules : null,
             "created_at"        => $this->created_at
         ];
         $default = $this->customRules($default, $request);
