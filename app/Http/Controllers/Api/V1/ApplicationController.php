@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 use GuzzleHttp\Command\Exception\CommandClientException;
 
-use App\Models\User;
 use App\Models\Application;
 use App\Models\Module;
 use Illuminate\Support\Facades\Auth;
@@ -25,69 +23,37 @@ class ApplicationController extends Controller
 {
     public function index()
     {
-        $user = Auth::user();
-        $applications = Application::where("owner_id", $user->id)
-            ->with("owner")
+        $id = Auth::user()->id;
+        $applications = Application::where("owner_id", $id)
             ->get();
 
         return new ApplicationCollection($applications);
     }
 
-    public function get(string $id, Request $request)
-    {   
-        if(!$request->user("api")) {
-            $header = $request->header("Authorization");
-            if(!isset($header)) {
-                return response()->json([
-                    "status" => 401,
-                    "message" => "Vous devez vous connecter pour effectuer cette requête!"
-                ], 401);
-            }
-
-            $app = Application::where("bot_token", $header)->where("_id", $id)->first();
-            if(!isset($app)) {
-                return response()->json([
-                    "status" => 404,
-                    "message" => "Cette application n'existe pas!"
-                ], 404);
-            }
-
-            return new ApplicationResource($app);
-        }
-
-        $user = Auth::user();
-        $application = Application::find($id);
-
-        if(!isset($application)) {
-            return response()->json([
-                "status" => 404,
-                "message" => "Cette application n'existe pas!"
-            ], 404);
-        }
-
-        return new ApplicationResource($application);
+    public function get(string $id)
+    {
+        return new ApplicationResource(resolve("application"));
     }
 
-    public function store(Request $request)
+    public function store()
     {
         $guild_id = $request->input("guild_id");
         $bot_token = $request->input("bot_token");
 
-        $user = Auth::user();
-        $guild = collect($user->guilds)->where("id", $guild_id);
+        $guild = collect(Auth::user()->guilds)->where("id", $guild_id);
 
         if (!isset($bot_token) or !isset($guild_id)) {
             $value = isset($bot_token) ? "guild_id" : "bot_token";
             return response()->json([
                 "status" => 404,
-                "message" => "Il manque le {$value}!"
-            ], 404);
+                "message" => "missing_{$value}"
+            ], 400);
         }
 
         if($guild->isEmpty()) {
             return response()->json([
                 "status" => 404,
-                "message" => "Ce serveur n'existe pas!"
+                "message" => "unexistant_server"
             ], 404);
         }
 
@@ -119,15 +85,14 @@ class ApplicationController extends Controller
         } catch (CommandClientException $e) {
             return response()->json([
                 "status" => 404,
-                "message" => "Ce bot n'existe pas!"
+                "message" => __("ro-bot.404.bot_doesnt_exists")
             ], 404);
         }
     }
 
-    public function edit(string $id, ApplicationRequest $request)
+    public function update(string $id, ApplicationRequest $request)
     {
-        $user = Auth::user();
-        $application = Application::find($id);
+        $application = resolve("application");
 
         if($request->input("bot_token")) {
             try {
@@ -145,7 +110,7 @@ class ApplicationController extends Controller
             } catch (CommandClientException $e) {
                 return response()->json([
                     "status" => 404,
-                    "message" => "Ce bot n'existe pas!"
+                    "message" => __("ro-bot.404.bot_doesnt_exists")
                 ], 404);
             }
         }
@@ -155,10 +120,32 @@ class ApplicationController extends Controller
             "notification" => [
                 "type" => "success",
                 "layout" => "notification",
-                "title" => "Succès!",
-                "content" => "Vous avez édité les informations de votre bot."
+                "title" => __("ro-bot.success"),
+                "content" => __("ro-bot.404.success_edit_bot")
             ]
         ];
+    }
+
+    private function array_diff_recursive($array, $diff)
+    {
+        $new = [];
+        foreach ($array as $mKey => $mValue) {
+            if (array_key_exists($mKey, $diff)) {
+                if (is_array($mValue)) {
+                    $aRecursiveDiff = $this->array_diff_recursive($mValue, $diff[$mKey]);
+                    if (count($aRecursiveDiff)) { 
+                        $new[$mKey] = $aRecursiveDiff; 
+                    }
+                } else {
+                    if ($mValue != $diff[$mKey]) {
+                        $new[$mKey] = $mValue;
+                    }
+                }
+            } else {
+                $new[$mKey] = $mValue;
+            }
+        }
+        return $new;
     }
 
     public function sync(string $id) 
@@ -167,10 +154,17 @@ class ApplicationController extends Controller
         $application = Application::find($id);
         $guild = collect($user->guilds)->firstWhere("id", $application->guild_id);
 
+        if(isset($application->errors) && count($application->errors) > 0) {
+            return response()->json([
+                "status" => 401,
+                "message" => __("ro-bot.401.impossible_resync")
+            ], 401);
+        }
+
         if(!$guild) {
             return response()->json([
                 "status" => 404,
-                "message" => "Ce serveur n'existe pas!"
+                "message" => __("error.404.message")
             ], 404);
         }
 
@@ -186,7 +180,7 @@ class ApplicationController extends Controller
         if ($botOnServer === null) {
             return response()->json([
                 "status" => 401,
-                "message" => "Le bot n'est pas présent sur le discord!"
+                "message" => __("ro-bot.404.bot_not_found_in_guild")
             ], 401);
         }
 
@@ -214,21 +208,76 @@ class ApplicationController extends Controller
             ];
         });
 
+        $old = [
+            "emojis"        => $application["emojis"],
+            "channels"      => $application["channels"],
+            "roles"         => $application["roles"]
+        ];
+
         $application["emojis"] = array_values($emojis->toArray());
         $application["channels"] = array_values($channels->toArray());
         $application["roles"] = array_values($roles->toArray());
 
         $application->push();
 
+        $differences = [
+            "channels"  => $this->array_diff_recursive($old["channels"], $application["channels"]),
+            "emojis"    => $this->array_diff_recursive($old["emojis"], $application["emojis"]),
+            "roles"     => $this->array_diff_recursive($old["roles"], $application["roles"]),
+        ];
+
+        $errors = [];
+        foreach($application["modules"] as $key => $module)
+        {
+            $mod = Module::where("_id", $module["id"])->first();
+
+            $errors[] = [
+                "type" => $mod->type,
+                "channels" => null,
+                "roles" => null
+            ];
+            $id = array_key_last($errors);
+
+            $count = 0;
+            if(isset($mod->channels)) {
+                foreach($differences["channels"] as $k => $diff) {
+                    foreach($mod->channels as $k => $channel_id) {
+                        if(isset($diff["id"]) && $channel_id == $diff["id"]) {
+                            $errors[$id]["channels"][] = (object)[
+                                "id" => $diff["id"],
+                                "color" => $diff["color"],
+                            ];
+                            $count += 1;
+                        }
+                    }
+                }
+            }
+            if(isset($mod->roles)) {
+                foreach($differences["roles"] as $k => $diff) {
+                    foreach($mod->roles as $k => $role_id) {
+                        if(isset($diff["id"]) && $role_id == $diff["id"]) {
+                            $errors[$id]["roles"][] = (object)[
+                                "id" => $diff["id"],
+                                "color" => $diff["color"],
+                                "name" => $diff["name"]
+                            ];
+                            $count += 1;
+                        }
+                    }
+                }
+            }
+            if($count == 0) {
+                unset($errors[$id]);
+            } else {
+                $errors[$id] = (object)$errors[$id];
+            }
+        }
+
+        $application->errors = $errors;
+        $application->push();
+
         return [
-            "notification" => [
-                "type" => "success",
-                "layout" => "modal",
-                "title" => "Succès!",
-                "content" => "Vous avez synchronisé les informations de votre serveur avec le site.
-                    <br/>
-                    Nous avons récupéré {$emojis->count()} emojis, {$channels->count()} channels et {$roles->count()} rôles."
-            ]
+            "errors" => $errors
         ];
     }
 }

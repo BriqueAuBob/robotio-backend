@@ -9,14 +9,13 @@ class Module extends Model
     protected $collection = "modules";
 
     protected $fillable = [
-        "channel",
+        "channels",
         "roles",
-        "permissions",
         "data",
         "embed",
-        "response",
         "type",
         "category",
+        "response"
     ];
 
     public function owner() {

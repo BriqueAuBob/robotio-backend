@@ -16,6 +16,9 @@ class Application extends Model
         "avatar",
         "owner_id",
         "prefix",
+        "errors",
+        "language",
+        "collaborators",
     ];
 
     public function owner() {

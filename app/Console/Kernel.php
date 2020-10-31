@@ -13,7 +13,6 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        \App\Console\Commands\SupportersCheck::class
     ];
 
     /**
@@ -24,9 +23,6 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('supporters:check')->daily();
-        $schedule->command('update:colors')->daily();
-        $schedule->command('check:birthday')->daily();
     }
 
     /**

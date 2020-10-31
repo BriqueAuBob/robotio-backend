@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Resources\Users\UserCollection;
 use App\Http\Resources\Users\UserResource;
 
 use Illuminate\Http\JsonResponse;

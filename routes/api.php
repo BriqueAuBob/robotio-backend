@@ -35,19 +35,32 @@ Route::prefix("v1")->namespace("Api\V1")->group(static function () {
     // ~/applications
     Route::prefix("applications")->group(static function() {
         Route::get("/", "ApplicationController@index")->middleware(["auth:api"])->name("applications.index");
-        Route::get("/{id}", "ApplicationController@get")->name("applications.get");
-        Route::put("/{id}", "ApplicationController@edit")->middleware(["auth:api"])->name("applications.edit");
+        Route::get("/{id}", "ApplicationController@get")->middleware(["application:admin,modo"])->name("applications.get");
+        Route::post("/", "ApplicationController@store")->middleware(["auth:api"])->name("applications.store");
+        Route::put("/{id}", "ApplicationController@update")->middleware(["auth:api", "application"])->name("applications.edit");
+
         Route::put("/{id}/synchronize", "ApplicationController@sync")->middleware(["auth:api"])->name("applications.sync");
 
-        Route::get("/{id}/log", "LogController@index")->middleware(["auth:api"])->name("logs.index");
-        Route::post("/{id}/log", "LogController@store")->name("logs.store");
+        Route::get("/{id}/log", "LogController@index")->middleware(["application"])->name("logs.index");
+        Route::post("/{id}/log", "LogController@store")->middleware(["application"])->name("logs.store");
 
-        Route::get("/{id}/modules/{type}", "ModuleController@get")->name("modules.get");
-        Route::put("/{id}/modules/{type}", "ModuleController@edit")->name("modules.edit");
-        Route::post("/{id}/modules", "ModuleController@store")->middleware(["auth:api"])->name("modules.store");
+        // ~/{id}/modules/
+        Route::group(["prefix" => "{id}/modules"], function () {
+            Route::get("/", "ModuleController@index")->middleware(["application"])->name("modules.index");
+            Route::get("/{type}", "ModuleController@get")->middleware(["application"])->name("modules.get");
+            Route::put("/{type}", "ModuleController@update")->middleware(["application"])->name("modules.edit");
+            Route::post("/", "ModuleController@store")->middleware(["application"])->name("modules.store");
+        });
 
-        Route::post("/", "ApplicationController@store")->middleware(["auth:api"])->name("applications.store");
+        // ~/{id}/
+        Route::group(["prefix" => "{id}", "namespace" => "Modules"], function () {
+            Route::get("warns/", "WarnController@index")->middleware(["application"])->name("warns.index");
+            Route::get("warns/{warn}", "WarnController@get")->middleware(["application"])->name("warns.get");
+            Route::post("warns/", "WarnController@store")->middleware(["application"])->name("warns.store");
+            Route::delete("warns/", "WarnController@destroy")->middleware(["application"])->name("warns.get");
+
+            Route::post("annoucement/", "AnnouncementController@send")->middleware(["application"])->name("annoucement.send");
+        });
     });
 
 });
-    

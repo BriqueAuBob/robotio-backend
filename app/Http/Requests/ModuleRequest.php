@@ -11,12 +11,13 @@ class ModuleRequest extends FormRequest
     public function messages()
     {
         return [
-            "channel.string" => "Le channel est invalide.",
+            "channels.string" => "Le channel est invalide.",
             "roles.array" => "Le champs 'rôles' dois être un tableau.",
             "permissions.array" => "Le champs 'permissions' dois être un tableau.",
             "response.string" => "La response est invalide.",
+            "type.required" => "Le type est requis.",
             "type.string" => "Le type est invalide.",
-            "category.string" => "La category est invalide.",
+            "category.required" => "Le type est pas présent dans notre liste de modules.",
         ];
     }
 
@@ -36,13 +37,23 @@ class ModuleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "channel" => "string",
-            "roles" => "array",
-            "data" => "",
-            "embed" => "",
-            "response" => "string",
-            "type" => "string",
-            "category" => "string",
+            "channels" => "nullable|array",
+            "roles" => "nullable|array",
+            "data" => "nullable",
+            "type" => "required|string",
+            "category" => "required|string",
+            "response" => "nullable",
         ];
+    }
+
+    public function validationData()
+    {
+        $modules = config("ro-bot.modules");
+        $data = $this->all();
+
+        if(!isset($data["type"]) || !isset($modules[$data["type"]])) return $data;
+
+        $data["category"] = $modules[$data["type"]];
+        return $data;
     }
 }

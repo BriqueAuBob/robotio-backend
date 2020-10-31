@@ -2,8 +2,6 @@
 
 namespace App\Http\Requests;
 
-use \Auth;
-
 use Illuminate\Foundation\Http\FormRequest;
 
 class ApplicationRequest extends FormRequest
@@ -13,6 +11,9 @@ class ApplicationRequest extends FormRequest
         return [
             "prefix.min" => "Votre préfixe est trop court!",
             "prefix.max" => "Votre préfixe est trop long!",
+            "language.min" => "Votre language est trop court!",
+            "language.max" => "Votre language est trop long!",
+            "collaborators.array" => "Le champs collaborators doit être un tableau!",
         ];
     }
 
@@ -33,6 +34,8 @@ class ApplicationRequest extends FormRequest
     {
         return [
             "prefix" => "min:1|max:4",
+            "language" => "min:1|max:3",
+            "collaborators" => "nullable|array",
         ];
     }
 }

@@ -3,103 +3,91 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
-use GuzzleHttp\Command\Exception\CommandClientException;
-
-use App\Models\User;
-use App\Models\Application;
 use App\Models\Module;
-use Illuminate\Support\Facades\Auth;
-
-use App\Helpers\Discord;
-use RestCord\DiscordClient;
-
-use App\Http\Resources\Applications\ApplicationCollection;
-use App\Http\Resources\Applications\ApplicationResource;
 
 use App\Http\Requests\ModuleRequest;
 
+use App\Http\Resources\Modules\ModuleCollection;
+use App\Http\Resources\Modules\ModuleResource;
+
 class ModuleController extends Controller
 {
-    public function index()
+    public function index(string $id)
     {
-        $application = Application::where($id)->get();
-
-        return $application;
-    }
-
-    public function get(string $id, string $type, Request $request)
-    {
-        if(!$request->user("api")) {
-            $header = $request->header("Authorization");
-
-            if(!isset($header)) {
-                return response()->json([
-                    "status" => 401,
-                    "message" => "Vous devez vous connecter pour effectuer cette requête!"
-                ], 401);
-            }
-            
-            $application = Application::where("bot_token", $header)->where("_id", $id)->first();
-            if(!isset($application)) {
-                return response()->json([
-                    "status" => 404,
-                    "message" => "Cette application n'existe pas!"
-                ], 404);
-            }
-
-            $mod = collect($application->modules)->where("type", $type)->first();
-            $module = Module::find($mod["id"]);
-
-            return $module;
+        $application = resolve("application");
+        $modules = [];
+        if(!$application->modules) return $modules;
+        foreach($application->modules as $key => $mod) {
+            $mod = Module::where("_id", $mod["id"])
+                ->first();
+            $modules[] = $mod;
         }
 
-        $modules = config("ro-bot.modules");
-        if(!isset($modules[$type])) return [
-                "notification" => [
-                "type" => "error",
+        return new ModuleCollection($modules);
+    }
+
+    public function get(string $id, string $type)
+    {
+        $module = resolve("module");
+        if(!$module) {
+            return [];
+        }
+        return new ModuleResource($module);
+    }
+
+    public function update(string $id, string $type, ModuleRequest $request)
+    {
+        $module = resolve("module");
+        
+        $module->update($request->validated());
+        return [
+            "notification" => [
+                "type" => "success",
                 "layout" => "notification",
-                "title" => "Erreur!",
-                "content" => "Ce module n'existe pas dans notre liste de modules."
+                "title" => __("ro-bot.success"),
+                "content" => __("ro-bot.success_edit_module")
             ]
         ];
-            
-        $application = Application::find($id);
-        $mod = collect($application->modules)->where("type", $type)->first();
-        if($mod == null) return;
-
-        $module = Module::find($mod["id"]);
-        return $module;
     }
 
     public function store(string $id, ModuleRequest $request)
     {
-        $user = Auth::user();
-        $application = Application::find($id);
+        $type = $request->input("type");
+        $application = resolve("application");
 
-        $mod = collect($application->modules)->where("type", $request->input("type"))->first();
-        if(isset($mod))
-        {
+        $modulesTypes = config("ro-bot.modules");
+        if(!$type || !$modulesTypes[$type]) {
             return response()->json([
-                "status" => 401,
-                "message" => "Ce module existe déjà!"
-            ], 401);
+                "status" => 404,
+                "message" => __("ro-bot.module_doesnt_exists_in_list")
+            ], 404);
         }
 
+        $module = collect($application->modules)->where("type", $type)->first();
+
+        if($module) {
+            return response()->json([
+                "status" => 401,
+                "message" => __("ro-bot.module_already_exists")
+            ], 401);
+        }
         $module = Module::create($request->validated());
+
         $modules = $application->modules;
-        if(isset($modules)) {
-            array_push($modules, [
+        if(isset($modules) && is_array($modules)) {
+            $modules[] = [
                 "id" => $module->_id,
                 "type" => $module->type
-            ]);
+            ];
         } else {
-            $modules = array([
-                "id" => $module->_id,
-                "type" => $module->type
-            ]);
+            $modules = [
+                [
+                    "id" => $module->_id,
+                    "type" => $module->type
+                ]
+            ];
         }
         $application->modules = $modules;
         $application->save();
@@ -108,32 +96,8 @@ class ModuleController extends Controller
             "notification" => [
                 "type" => "success",
                 "layout" => "notification",
-                "title" => "Succès!",
-                "content" => "Vous avez ajouté le module."
-            ]
-        ];
-    }
-
-    public function edit(string $id, string $type, ModuleRequest $request)
-    {
-        $application = Application::find($id);
-        $mod = collect($application->modules)->where("type", $type)->first();
-
-        if(!isset($mod)) {
-            return response()->json([
-                "status" => 404,
-                "message" => "Il n'existe aucun module de ce type pour cette application!"
-            ], 401);
-        }
-        $module = Module::find($mod["id"]);
-
-        $module->update($request->validated());
-        return [
-            "notification" => [
-                "type" => "success",
-                "layout" => "notification",
-                "title" => "Succès!",
-                "content" => "Vous avez édité les informations du module."
+                "title" => __("ro-bot.success"),
+                "content" => __("ro-bot.you_add_module"),
             ]
         ];
     }

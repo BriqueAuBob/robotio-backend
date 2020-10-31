@@ -14,6 +14,8 @@ use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\TrimStrings;
 use App\Http\Middleware\TrustProxies;
 use App\Http\Middleware\VerifyCsrfToken;
+use App\Http\Middleware\ApplicationCheck;
+use App\Http\Middleware\Internationalization;
 use Bepsvpt\SecureHeaders\SecureHeadersMiddleware;
 use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
 use Illuminate\Auth\Middleware\Authorize;
@@ -50,6 +52,7 @@ class Kernel extends HttpKernel
         TrimStrings::class,
         ConvertEmptyStringsToNull::class,
         \Fruitcake\Cors\HandleCors::class,
+        Internationalization::class,
     ];
 
     /**
@@ -68,7 +71,7 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            'throttle:600,1',
+            'throttle:120,1',
             'bindings',
             'return_json',
             LastActivity::class,
@@ -99,6 +102,7 @@ class Kernel extends HttpKernel
         'has_react' => MemberHasReact::class,
         'accept_terms' => AcceptTerms::class,
         'return_json' => JsonMiddleware::class,
+        'application' => ApplicationCheck::class,
     ];
 
     /**

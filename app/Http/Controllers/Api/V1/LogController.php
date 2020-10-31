@@ -6,8 +6,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
-use Illuminate\Support\Facades\Auth;
-
 use App\Models\Application;
 use App\Models\Log;
 
@@ -16,12 +14,11 @@ use App\Http\Requests\LogRequest;
 class LogController extends Controller {
     public function index(string $id, Request $request)
     {
-        $user = Auth::user();
+        $application = resolve("application");
 
-        $application = Application::where("_id", $id)->first();
-        if(!isset($application) || $application["owner_id"] != $user["_id"]) return;
-
-        return Log::filter($request->all())->get();
+        return Log::filter($request->all())
+            ->where("app_id", $id)
+            ->get();
     }
 
     public function store(string $id, LogRequest $request)
@@ -33,7 +30,7 @@ class LogController extends Controller {
         if(!isset($header)) {
             return response()->json([
                 "status" => 401,
-                "message" => "Vous devez vous connecter pour effectuer cette requête!"
+                "message" => __("error.401.message")
             ], 401);
         }
         
@@ -41,7 +38,7 @@ class LogController extends Controller {
         if(!isset($application)) {
             return response()->json([
                 "status" => 404,
-                "message" => "Cette application n'existe pas!"
+                "message" => __("error.404.message")
             ], 404);
         }
 

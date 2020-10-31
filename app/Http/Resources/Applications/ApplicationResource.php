@@ -5,9 +5,7 @@ namespace App\Http\Resources\Applications;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-use App\Models\User;
 use App\Models\Module;
-use Illuminate\Support\Facades\Auth;
 
 class ApplicationResource extends JsonResource
 {
@@ -20,21 +18,40 @@ class ApplicationResource extends JsonResource
             $guild = collect($user->guilds)->where("id", $this->guild_id)->first();
 
             $default["guild"] = $guild;
-            $default["modules"] = isset($this->modules) ? $this->modules : null;
+            $default["modules"] = isset($this->modules) ? collect($this->modules)->map(static function($item, $key) {
+                return $item["id"];
+            }) : null;
         } else {
             $default["modules"] = collect($this->modules)->map(static function($item, $key) {
                 $data = Module::where("_id", $item["id"])->first();
                 return [
-                    "id"    => $item["id"],
-                    "type"  => $item["type"],
-                    "data"  => $data->data,
-                    "embed"  => $data->embed,
-                    "roles"  => $data->roles,
-                    "channel"  => $data->channel,
+                    "id"            => $item["id"],
+                    "type"          => $item["type"],
+                    "category"      => $data->category,
+                    "data"          => $data->data,
+                    "roles"         => $data->roles,
+                    "channels"      => $data->channels,
+                    "response"      => $data->response
                 ];
             });
         }
-        
+
+        if($request->collaborator && $request->collaborator === "admin") {
+            $default["role"] = $request->collaborator;
+        } elseif ($request->collaborator && $request->collaborator === "modo") {
+            $default["role"] = $request->collaborator;
+            $default["modules"] = null;
+
+            $default["channels"] = null;
+            $default["roles"] = null;
+            $default["emojis"] = null;
+
+            $default["errors"] = null;
+        } else {
+            $default["role"] = "owner";
+            $default["bot_token"] = $this->bot_token;
+        }
+
         return $default;
     }
 
@@ -48,7 +65,6 @@ class ApplicationResource extends JsonResource
         $default = [
             "guild_id"          => $this->guild_id,
             "prefix"            => isset($this->prefix) ? $this->prefix : "/",
-            "owner"             => $this->owner,
             "id"                => $this->_id,
             "name"              => $this->name,
             "discriminator"     => $this->discriminator,
@@ -56,7 +72,9 @@ class ApplicationResource extends JsonResource
             "channels"          => $this->channels,
             "roles"             => $this->roles,
             "emojis"            => $this->emojis,
-            "bot_token"         => $this->bot_token,
+            "language"          => $this->language,
+            "errors"            => $this->errors,
+            "collaborators"     => $this->collaborators,
             "created_at"        => $this->created_at
         ];
         $default = $this->customRules($default, $request);
