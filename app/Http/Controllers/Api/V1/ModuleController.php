@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 use App\Models\Module;
@@ -11,6 +12,8 @@ use App\Http\Requests\ModuleRequest;
 
 use App\Http\Resources\Modules\ModuleCollection;
 use App\Http\Resources\Modules\ModuleResource;
+
+use App\Models\Score;
 
 class ModuleController extends Controller
 {

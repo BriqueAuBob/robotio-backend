@@ -60,6 +60,9 @@ Route::prefix("v1")->namespace("Api\V1")->group(static function () {
             Route::delete("warns/", "WarnController@destroy")->middleware(["application"])->name("warns.get");
 
             Route::post("annoucement/", "AnnouncementController@send")->middleware(["application"])->name("annoucement.send");
+
+            Route::get("minigames/score", "MinigameController@index")->middleware(["application"])->name("modules.minigames.index");
+            Route::post("minigames/score", "MinigameController@store")->middleware(["application"])->name("modules.minigames.store");
         });
     });
 
